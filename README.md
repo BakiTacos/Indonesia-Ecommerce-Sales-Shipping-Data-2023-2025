@@ -7,6 +7,8 @@ FORMAT FILE: xlsx
 
 BAHASA: Bahasa Indonesia
 
+MATA UANG: Rupiah
+
 Dataset disediakan dalam dua versi:
 1. CLEAN Files
 Versi yang telah dibersihkan, dikonsolidasikan, distandardisasi kolomnya.
