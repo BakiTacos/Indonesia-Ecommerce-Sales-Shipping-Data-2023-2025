@@ -14,9 +14,9 @@ PUBLIC_DIR.mkdir(exist_ok=True)
 #  NAMA KOLOM (HEADER RAW)
 # =========================
 
-COL_ORDER_ID = "No. Pesanan"
-COL_PRODUCT_NAME = "Nama Produk"
-COL_CANCEL_REASON   = "Alasan Pembatalan"
+COL_ORDER_ID      = "No. Pesanan"
+COL_PRODUCT_NAME  = "Nama Produk"
+COL_CANCEL_REASON = "Alasan Pembatalan"
 
 # =========================
 #  FUNGSI KATEGORISASI PRODUK
@@ -25,21 +25,17 @@ COL_CANCEL_REASON   = "Alasan Pembatalan"
 def categorize_product(name: str) -> str:
     """
     Ubah 'Nama Produk' menjadi kategori umum.
-    Aturan disesuaikan dengan isi dataset (rak, baskom, keranjang, toples,
-    celengan LPG, gagang pintu, weather seal, sapu, sikat, pot tanaman, dll).
     """
     if not isinstance(name, str):
         return "Other"
 
     n = name.lower()
 
-    # === Kategori paling spesifik dulu ===
-
     # Aksesoris ID Card / Name Tag
     if "id card" in n or "name tag" in n or "kartu identitas" in n:
         return "Aksesoris ID Card"
 
-    # Celengan (termasuk bentuk tabung gas, nanas, dll.)
+    # Celengan
     if "celengan" in n:
         return "Celengan"
 
@@ -68,11 +64,11 @@ def categorize_product(name: str) -> str:
     if "tempat nasi" in n or "bakul nasi" in n or "sangku nasi" in n or "wakul" in n:
         return "Tempat Nasi"
 
-    # Rak (rak susun, rak cuci piring, rak serbaguna)
+    # Rak
     if n.startswith("rak") or " rak " in n:
         return "Rak / Rak Serbaguna"
 
-    # Keranjang (belanja, baju, buah, serbaguna)
+    # Keranjang
     if "keranjang" in n:
         return "Keranjang"
 
@@ -85,7 +81,7 @@ def categorize_product(name: str) -> str:
     if "piring" in n or "plate" in n:
         return "Piring"
 
-    # Mangkok (umum, bukan sambal/baskom)
+    # Mangkok (umum)
     if "mangkok" in n or "mangkuk" in n:
         return "Mangkok"
 
@@ -94,12 +90,12 @@ def categorize_product(name: str) -> str:
         "pitcher" in n or "jug" in n):
         return "Teko / Jug"
 
-    # Saringan / strainer / tirisan / ayakan
+    # Saringan / strainer
     if ("saringan" in n or "strainer" in n or "filter" in n or
         "ayakan" in n or "tirisan" in n):
         return "Saringan / Strainer"
 
-    # Peralatan makan (sendok, garpu, set steak, sendok teh)
+    # Peralatan makan
     if "sendok" in n or "garpu" in n or "steak" in n:
         return "Peralatan Makan"
 
@@ -115,7 +111,7 @@ def categorize_product(name: str) -> str:
     if "chopper" in n or "penggiling" in n or "blender" in n or "mixer" in n:
         return "Pengolah Bumbu / Sayur"
 
-    # Talenan / cutting board
+    # Talenan
     if "talenan" in n or "cutting board" in n:
         return "Talenan"
 
@@ -138,12 +134,12 @@ def categorize_product(name: str) -> str:
     if "tempat sampah" in n or "keranjang sampah" in n or "tong sampah" in n:
         return "Tempat Sampah"
 
-    # Aksesoris pintu (engsel, grendel, handle, tarikan, selot, knob)
+    # Aksesoris pintu
     if ("engsel" in n or "grendel" in n or "selot" in n or
         "handle" in n or "tarikan" in n or "knob" in n or "door lock" in n):
         return "Aksesoris Pintu"
 
-    # Peralatan mandi & kamar mandi (tempat sabun, sikat WC, dll.)
+    # Peralatan kamar mandi
     if ("tempat sabun" in n or "soap" in n or "toilet" in n or
         "wc" in n or "kamar mandi" in n):
         return "Peralatan Kamar Mandi"
@@ -152,29 +148,29 @@ def categorize_product(name: str) -> str:
     if "gayung" in n:
         return "Gayung"
 
-    # Peralatan kebersihan (sapu, sikat lantai/baju, bola kawat)
+    # Peralatan kebersihan
     if "sapu" in n:
         return "Sapu / Pembersih Lantai"
     if "sikat" in n or "scourer" in n or "bola kawat" in n:
         return "Sikat / Pembersih"
 
-    # Seal / baut / kunci / roof / skrup
+    # Seal / baut / skrup / roof
     if ("weather seal" in n or "roof seal" in n or "penutup skrup" in n or
         "skrup" in n or "baut" in n or "drilling screw" in n):
         return "Seal / Baut / Roof"
     if "kunci l" in n or "kunci " in n:
         return "Perkakas"
 
-    # Perlengkapan packing (tali strapping, gesper plastik)
+    # Perlengkapan packing
     if ("gesper plastik" in n or "tali strapping" in n or
         "strapping band" in n or "packing" in n or "packingan" in n):
         return "Perlengkapan Packing"
 
-    # Aksesoris motor (kalau muncul di bulan lain)
+    # Aksesoris motor
     if "motor" in n or "busi" in n or "spion" in n or "oli" in n:
         return "Aksesoris Motor"
 
-    # Plastik (kantong, wadah plastik umum)
+    # Plastik
     if "plastik" in n:
         return "Plastik / Wadah Plastik"
 
@@ -182,73 +178,77 @@ def categorize_product(name: str) -> str:
     if "obeng" in n or "screwdriver" in n or "kunci inggris" in n:
         return "Perkakas"
 
-    # Stempel / alat kantor kecil
+    # Stempel
     if "stempel" in n or "stamp" in n:
         return "Stempel / Alat Kantor"
 
-    # Pot tanaman / siram bunga
+    # Pot tanaman
     if "pot tanaman" in n or "pot siram" in n or "siraman bunga" in n or "pot bunga" in n:
         return "Pot Tanaman / Bunga"
 
-    # Cobek dan ulekan
+    # Cobek / ulekan
     if "cobek" in n or "ulekan" in n:
         return "Cobek / Ulekan"
 
-    # Default
     return "Other"
 
 
+
+
+
 # =========================
-#  FUNGSI ANONIMISASI ORDER ID
+#  FUNGSI ANONIMISASI ORDER ID (dengan global counter)
 # =========================
 
-def anonymize_order_ids(df, col_order_id=COL_ORDER_ID):
+def anonymize_order_ids(df, start_counter: int, col_order_id: str = COL_ORDER_ID):
     """
     Membuat mapping:
-        original_id → ORD_000001
-    Dengan aturan:
-    - Jika original ID muncul berkali-kali → pakai ORD yang sama
-    - Konsisten dalam satu file
+        original_id → ORD_0000001, ORD_0000002, ...
+    Menggunakan counter global agar unik di semua file.
     """
     unique_ids = df[col_order_id].dropna().unique()
 
     mapping = {
         oid: f"ORD_{i:07d}"
-        for i, oid in enumerate(unique_ids, start=1)
+        for i, oid in enumerate(unique_ids, start=start_counter)
     }
 
     df["order_id"] = df[col_order_id].map(mapping)
-    return df
+    next_counter = start_counter + len(unique_ids)
+    return df, next_counter
 
 
 # =========================
 #  PROSES SATU FILE RAW
 # =========================
 
-def process_raw_file(path: Path) -> pd.DataFrame:
+def process_raw_file(path: Path, start_counter: int):
     print(f"Processing RAW → PUBLIC: {path.name}")
 
     df = pd.read_excel(path)
 
-    # 1) Anonimisasi order ID (konsisten)
-    df = anonymize_order_ids(df)
+    # 1) Anonimisasi order ID (konsisten & global)
+    df, next_counter = anonymize_order_ids(df, start_counter)
 
     # 2) Tambahkan kategori produk
     df["product_category"] = df[COL_PRODUCT_NAME].apply(categorize_product)
 
    
-    # 3) Drop nama produk (sangat aman untuk publik)
+
+    # 4) Drop nama produk (privat)
     if COL_PRODUCT_NAME in df.columns:
         df = df.drop(columns=[COL_PRODUCT_NAME])
 
-    # 4) Drop order ID asli
+    # 5) Drop order ID asli
     df = df.drop(columns=[COL_ORDER_ID])
 
     # rapikan urutan kolom
-    new_cols = ["order_id", "product_category"] + [c for c in df.columns if c not in ["order_id", "product_category"]]
+    new_cols = ["order_id", "product_category"] + [
+        c for c in df.columns if c not in ["order_id", "product_category"]
+    ]
     df = df[new_cols]
 
-    return df
+    return df, next_counter
 
 
 # =========================
@@ -262,13 +262,17 @@ def main():
         print("Tidak ada file RAW ditemukan.")
         return
 
+    counter = 1  # global counter untuk semua RAW_PUBLIC
+
     for f in raw_files:
-        df_public = process_raw_file(f)
+        df_public, counter = process_raw_file(f, counter)
 
         out_path = PUBLIC_DIR / f"{f.stem}_public.xlsx"
         df_public.to_excel(out_path, index=False)
 
         print(f"   → Saved public file: {out_path.name}")
+
+    print(f"Selesai. Total unique order_id (perkiraan): {counter - 1}")
 
 
 if __name__ == "__main__":

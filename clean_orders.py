@@ -38,6 +38,11 @@ COL_PROVINCE        = "Provinsi"
 # =========================
 
 def categorize_product(name: str) -> str:
+    """
+    Ubah 'Nama Produk' menjadi kategori umum.
+    Aturan disesuaikan dengan isi dataset (rak, baskom, keranjang, toples,
+    celengan LPG, gagang pintu, weather seal, sapu, sikat, pot tanaman, dll).
+    """
     if not isinstance(name, str):
         return "Other"
 
@@ -153,7 +158,7 @@ def categorize_product(name: str) -> str:
         "handle" in n or "tarikan" in n or "knob" in n or "door lock" in n):
         return "Aksesoris Pintu"
 
-    # Peralatan mandi & kamar mandi (tempat sabun, sikat WC, dll.)
+    # Peralatan mandi & kamar mandi
     if ("tempat sabun" in n or "soap" in n or "toilet" in n or
         "wc" in n or "kamar mandi" in n):
         return "Peralatan Kamar Mandi"
@@ -162,7 +167,7 @@ def categorize_product(name: str) -> str:
     if "gayung" in n:
         return "Gayung"
 
-    # Peralatan kebersihan (sapu, sikat lantai/baju, bola kawat)
+    # Peralatan kebersihan
     if "sapu" in n:
         return "Sapu / Pembersih Lantai"
     if "sikat" in n or "scourer" in n or "bola kawat" in n:
@@ -175,16 +180,16 @@ def categorize_product(name: str) -> str:
     if "kunci l" in n or "kunci " in n:
         return "Perkakas"
 
-    # Perlengkapan packing (tali strapping, gesper plastik)
+    # Perlengkapan packing
     if ("gesper plastik" in n or "tali strapping" in n or
         "strapping band" in n or "packing" in n or "packingan" in n):
         return "Perlengkapan Packing"
 
-    # Aksesoris motor (kalau muncul di bulan lain)
+    # Aksesoris motor
     if "motor" in n or "busi" in n or "spion" in n or "oli" in n:
         return "Aksesoris Motor"
 
-    # Plastik (kantong, wadah plastik umum)
+    # Plastik
     if "plastik" in n:
         return "Plastik / Wadah Plastik"
 
@@ -196,7 +201,7 @@ def categorize_product(name: str) -> str:
     if "stempel" in n or "stamp" in n:
         return "Stempel / Alat Kantor"
 
-    # Pot tanaman / siram bunga
+    # Pot tanaman
     if "pot tanaman" in n or "pot siram" in n or "siraman bunga" in n or "pot bunga" in n:
         return "Pot Tanaman / Bunga"
 
@@ -213,13 +218,6 @@ def categorize_product(name: str) -> str:
 # =========================
 
 def fix_rupiah(x):
-    """
-    Pastikan nilai rupiah tidak jadi 33.2, dsb.
-    - Terima string dengan koma/titik ribuan
-    - Hilangkan koma/titik
-    - Jika hasilnya digit semua -> kembalikan sebagai int
-    - Kalau tidak, kembalikan apa adanya
-    """
     if isinstance(x, str):
         x = x.strip()
         x = x.replace(",", "").replace(".", "")
@@ -233,10 +231,6 @@ def fix_rupiah(x):
 # =========================
 
 def fix_weight(x):
-    """
-    Bersihkan kolom 'Total Berat' yang berformat seperti '3200 gr', '180 gr', dll.
-    Output diusahakan jadi integer gram (misal 3200, 180, ...).
-    """
     if isinstance(x, str):
         x = x.lower()
         x = x.replace("gr", "").replace("gram", "")
@@ -246,14 +240,22 @@ def fix_weight(x):
     return x
 
 
+
+
+
 # =========================
 #  FUNGSI CLEANING SATU FILE
+#  (dengan global counter untuk order_id)
 # =========================
 
-def clean_one_file(path: Path) -> pd.DataFrame:
+def clean_one_file(path: Path, start_counter: int):
+    """
+    Membersihkan satu file dan mengembalikan:
+    - grouped: dataframe hasil clean
+    - next_counter: nilai counter berikutnya untuk dipakai file selanjutnya
+    """
     print(f"Processing: {path.name}")
 
-    # Baca file, paksa kolom rupiah sebagai string supaya tidak di-parse float
     df = pd.read_excel(
         path,
         dtype={
@@ -265,36 +267,30 @@ def clean_one_file(path: Path) -> pd.DataFrame:
         }
     )
 
-    # cek kolom wajib
     if COL_ORDER_ID not in df.columns:
         raise ValueError(f"Kolom '{COL_ORDER_ID}' tidak ditemukan di file {path.name}")
 
-    # 1) Kategori produk (kolom baru, tidak mengubah nama produk asli)
+    # kategori produk
     if COL_PRODUCT_NAME in df.columns:
         df["product_category"] = df[COL_PRODUCT_NAME].apply(categorize_product)
     else:
         df["product_category"] = "Unknown"
 
-    # 2) Bersihkan format rupiah -> jadi integer dengan nilai sama (33200, dst)
+    # rupiah → int
     for col in [COL_SHIP_PAID, COL_SHIP_EST, COL_DISCOUNT, COL_TOTAL_PAYMENT, COL_SHIP_DISC]:
         if col in df.columns:
             df[col] = df[col].apply(fix_rupiah)
 
-    # 3) Bersihkan 'Total Berat' -> angka gram
+    # berat → gram int
     if COL_WEIGHT in df.columns:
         df[COL_WEIGHT] = df[COL_WEIGHT].apply(fix_weight)
-        # pastikan numeric agar saat sum tidak concat string
         df[COL_WEIGHT] = pd.to_numeric(df[COL_WEIGHT], errors="coerce")
 
-        
-
-    # 4) JANGAN mengubah format tanggal:
-    #    -> Tidak ada pd.to_datetime, kolom 'Waktu Pesanan Dibuat' dibiarkan apa adanya.
-
-    # 5) Siapkan agregasi per pesanan (1 order = 1 baris)
+    # bersihkan alasan pembatalan
+   
+    # agregasi per order
     agg_dict = {}
 
-    # agregasi numerik yang memang harus dijumlahkan per order
     if COL_QTY in df.columns:
         agg_dict["total_qty"] = (COL_QTY, "sum")
     if COL_WEIGHT in df.columns:
@@ -302,15 +298,12 @@ def clean_one_file(path: Path) -> pd.DataFrame:
     if COL_RETURNED_QTY in df.columns:
         agg_dict["total_returned_qty"] = (COL_RETURNED_QTY, "sum")
 
-    # Total Diskon: SUDAH benar per order di -> jangan di-sum, jangan di-scale
-    # Ambil saja nilai pertama (diasumsikan sama di setiap baris pada order tsb)
     def first_if_exists(col_name, new_name=None):
         if col_name in df.columns:
             agg_dict[new_name or col_name] = (col_name, "first")
 
     first_if_exists(COL_DISCOUNT, COL_DISCOUNT)
 
-    # kategori produk dalam 1 pesanan
     agg_dict["product_categories"] = (
         "product_category",
         lambda x: ", ".join(sorted(set(x)))
@@ -320,7 +313,6 @@ def clean_one_file(path: Path) -> pd.DataFrame:
         lambda x: len(set(x))
     )
 
-    # kolom lain: cukup ambil nilai pertama per pesanan (tidak diubah skalanya)
     first_if_exists(COL_STATUS, "Status Pesanan")
     first_if_exists(COL_CANCEL_REASON, "Alasan Pembatalan")
     first_if_exists(COL_SHIP_OPTION, "Opsi Pengiriman")
@@ -331,22 +323,24 @@ def clean_one_file(path: Path) -> pd.DataFrame:
     first_if_exists(COL_SHIP_DISC, "Estimasi Potongan Biaya Pengiriman")
     first_if_exists(COL_TOTAL_PAYMENT, "Total Pembayaran")
     first_if_exists(COL_SHIP_EST, "Perkiraan Ongkos Kirim")
-    first_if_exists(COL_ORDER_TIME, COL_ORDER_TIME)  # tanggal/waktu dibiarkan apa adanya
+    first_if_exists(COL_ORDER_TIME, COL_ORDER_TIME)
 
-    # groupby per pesanan dengan named aggregation
     grouped = df.groupby(COL_ORDER_ID).agg(**agg_dict).reset_index()
 
-    # 6) Anonimkan order id
+    # anonimkan ID dengan counter global
     grouped.rename(columns={COL_ORDER_ID: "order_id_original"}, inplace=True)
+    n_rows = len(grouped)
+
     grouped.insert(
         0,
         "order_id",
-        [f"ORD_{i:07d}" for i in range(1, len(grouped) + 1)]
+        [f"ORD_{i:07d}" for i in range(start_counter, start_counter + n_rows)]
     )
-    # kalau mau benar-benar anonim untuk publik, hapus original:
+
     grouped = grouped.drop(columns=["order_id_original"])
 
-    return grouped
+    next_counter = start_counter + n_rows
+    return grouped, next_counter
 
 
 # =========================
@@ -361,10 +355,11 @@ def main():
         print(f"Tidak ada file .xlsx di folder '{RAW_DIR.resolve()}'")
         return
 
-    for f in xlsx_files:
-        cleaned = clean_one_file(f)
+    counter = 1  # global counter untuk semua bulan
 
-        # simpan per file (per bulan)
+    for f in xlsx_files:
+        cleaned, counter = clean_one_file(f, counter)
+
         out_path = CLEAN_DIR / f"{f.stem}_clean.xlsx"
         cleaned.to_excel(out_path, index=False)
         print(f"  -> Saved cleaned file: {out_path.name}")
@@ -372,7 +367,6 @@ def main():
         cleaned["source_file"] = f.name
         all_clean.append(cleaned)
 
-    # gabungkan semua bulan jadi satu
     if all_clean:
         combined = pd.concat(all_clean, ignore_index=True)
         combined_out = CLEAN_DIR / "all_months_clean.xlsx"
